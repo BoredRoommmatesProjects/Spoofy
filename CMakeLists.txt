@@ -92,6 +92,9 @@ message(STATUS "[ Mandatory dependencies ]")
 # SFML packages
 find_package(SFML COMPONENTS graphics audio REQUIRED)
 
+# Boost packages
+find_package(Boost REQUIRED COMPONENTS system filesystem thread)
+
 #===============================================================================
 # Include directories
 #===============================================================================
@@ -101,7 +104,7 @@ include_directories(${SPOOFY_PACKAGES_INCLUDE_DIRS})
 
 # Include Spoofy header files
 include_directories(
-    ${CMAKE_SOURCE_DIR/include/Spoofy}
+    ${CMAKE_SOURCE_DIR}/include/Spoofy
 )
 
 #===============================================================================
@@ -111,8 +114,12 @@ set(SPOOFY_PACKAGES_LIBRARIES
 )
 
 set(SPOOFY_DEPENDENCIES
-    sfml-graphics
-    sfml-audio
+  sfml-graphics
+  sfml-audio
+  Boost::boost
+  Boost::system 
+  Boost::filesystem
+  Boost::thread
 )
 
 #===============================================================================
