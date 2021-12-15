@@ -48,22 +48,16 @@ WindowHandler::~WindowHandler()
 
 	while (!m_bulletEntitysDeque.empty())
 	{
-		//Entity* tempEntity = m_bulletEntitysDeque.back();
-		//tempEntity = nullptr;
 		m_bulletEntitysDeque.pop_back();
 	}
 
 	while (!m_ennemyEntitysDeque.empty())
 	{
-		//Entity* tempEntity = m_ennemyEntitysDeque.back();
-		//tempEntity = nullptr;
 		m_ennemyEntitysDeque.pop_back();
 	}
 
 	while (!m_enemyBulletEntitysDeque.empty())
 	{
-		//Entity* tempEntity = m_enemyBulletEntitysDeque.back();
-		//tempEntity = nullptr;
 		m_enemyBulletEntitysDeque.pop_back();
 	}
 }
@@ -86,8 +80,6 @@ void WindowHandler::ResetGame()
 
 	while (!m_bulletEntitysDeque.empty())
 	{
-		//Entity* tempEntity = m_bulletEntitysDeque.back();
-		//tempEntity = nullptr;
 		m_bulletEntitysDeque.pop_back();
 	}
 
@@ -108,7 +100,8 @@ void WindowHandler::InitPlayer()
 	boost::filesystem::path currentWorkingDirectory = boost::filesystem::current_path();
 	std::string playerFilename = imagesPath + "player.png";
 	player->texture = LoadTexture(playerFilename);
-	//SDL_QueryTexture(player->texture, nullptr, nullptr, &player->w, &player->h);
+	player->w = player->texture->getSize().x;
+	player->h = player->texture->getSize().y;
 
 	m_playerEntity = player;
 }
@@ -134,22 +127,16 @@ void WindowHandler::InitEnemyBullet()
 void WindowHandler::PrepareWindow()
 {
     m_app->windowRenderer->clear(sf::Color(32, 32, 32, 255));
-	//SDL_SetRenderDrawColor(m_app->renderer, 32, 32, 32, 255);
-	//SDL_RenderClear(m_app->renderer);
 }
 
 void WindowHandler::PresentWindow()
 {
     m_app->windowRenderer->display();
-	//SDL_RenderPresent(m_app->renderer);
 }
 
 sf::Texture* WindowHandler::LoadTexture(std::string& a_filename)
 {
 	sf::Texture* texture = new sf::Texture();
-	//SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO, "Loading %s", a_filename);
-    ;
-	//texture = IMG_LoadTexture(m_app->renderer, a_filename);
     
 	if (!texture->loadFromFile(a_filename))
 	{
@@ -160,26 +147,10 @@ sf::Texture* WindowHandler::LoadTexture(std::string& a_filename)
 
 void WindowHandler::Blit(Entity* a_entity)
 {
-    sf::IntRect tempDest;
-
-    tempDest.left = (int)a_entity->x;
-    tempDest.top = (int)a_entity->y;
-    sf::Vector2u entitySize = a_entity->texture->getSize();
-    tempDest.width = entitySize.x;
-    tempDest.height = entitySize.y;
-
-	const sf::IntRect dest = tempDest;
-    
-	//SDL_Rect dest;
-	//dest.x = (int)a_entity->x;
-	//dest.y = (int)a_entity->y;
-
-	//SDL_QueryTexture(a_entity->texture, nullptr, nullptr, &dest.w, &dest.h);
-
-    const sf::Sprite tempSprite(dest, *a_entity->texture);
+    sf::Sprite tempSprite;
+	tempSprite.setTexture(*a_entity->texture);
+	tempSprite.setPosition(sf::Vector2f((int)a_entity->x, (int)a_entity->y));
 	
-
-	//SDL_RenderCopy(m_app->renderer, a_entity->texture, nullptr, &dest);
     m_app->windowRenderer->draw(tempSprite);
 }
 
@@ -243,8 +214,6 @@ void WindowHandler::FireBullet()
 
 	m_bulletEntitysDeque.push_front(bullet);
 
-	//SDL_QueryTexture(bullet->texture, nullptr, nullptr, &bullet->w, &bullet->h);
-
 	bullet->y += (m_playerEntity->h / 2) - (bullet->h / 2);
 
 	m_playerEntity->reload = 8;
@@ -263,7 +232,6 @@ void WindowHandler::FireEnemyBullet(Entity* a_enemyEntity)
 
 	m_enemyBulletEntitysDeque.push_front(enemyBullet);
 
-	//SDL_QueryTexture(enemyBullet->texture, nullptr, nullptr, &enemyBullet->w, &enemyBullet->h);
     sf::Vector2u enemyBulletTextureSize = m_enemyBulletTexture->getSize();
     enemyBullet->w = enemyBulletTextureSize.x;
     enemyBullet->h = enemyBulletTextureSize.y;
@@ -317,7 +285,6 @@ void WindowHandler::CreateEnemy()
 
 	m_ennemyEntitysDeque.push_front(enemy);
 
-	//SDL_QueryTexture(enemy->texture, nullptr, nullptr, &enemy->w, &enemy->h);
     sf::Vector2u enemyTextureSize = m_enemyBulletTexture->getSize();
     enemy->w = enemyTextureSize.x;
     enemy->h = enemyTextureSize.y;

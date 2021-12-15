@@ -13,9 +13,7 @@ LogicHandler::LogicHandler(App* a_app) : m_app(a_app)
 }
 
 LogicHandler::~LogicHandler()
-{
-
-}
+{}
 
 void LogicHandler::Logic()
 {
