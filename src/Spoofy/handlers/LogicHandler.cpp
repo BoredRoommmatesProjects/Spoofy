@@ -160,6 +160,7 @@ void LogicHandler::DoBullets()
 	std::deque<SpoofyEntity*>* bulletDeque = IGame::Instance()->GetWindowHandler()->GetBulletDeque();
 
 	size_t i = 1;
+	std::deque<SpoofyEntity*>::iterator it = bulletDeque->end() - 1;
 	while (i <= bulletDeque->size() && !bulletDeque->empty())
 	{
 		SpoofyEntity* tempEntity = bulletDeque->at(bulletDeque->size() - i);
@@ -174,9 +175,10 @@ void LogicHandler::DoBullets()
 		{
 			std::cout << "In DoBullets() function pop_back condition" << std::endl;
 			tempEntity = nullptr;
-			bulletDeque->pop_back();
+			bulletDeque->erase(it);
 		}
 		i++;
+		it--;
 	}
 }
 
