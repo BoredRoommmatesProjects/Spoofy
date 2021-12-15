@@ -3,19 +3,19 @@
 
 #include <SFML/Window/Event.hpp>
 
-struct App;
+struct IApp;
 
 class InputHandler
 {
 public:
-	InputHandler(App* a_app);
+	InputHandler(IApp* a_app);
 	~InputHandler();
 
 	void DoInput();
 	
 
 private:
-	App* m_app;
+	IApp* m_app;
 
 	void DoKeyUp(sf::Event::KeyEvent* event);
 	void DoKeyDown(sf::Event::KeyEvent* event);

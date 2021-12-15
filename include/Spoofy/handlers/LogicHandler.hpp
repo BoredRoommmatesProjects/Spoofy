@@ -1,13 +1,13 @@
 #ifndef _SPOOFY_HANDLERS_LOGICHANDLER_H_
 #define _SPOOFY_HANDLERS_LOGICHANDLER_H_
 
-struct Stage;
-struct App;
+
+struct IApp;
 
 class LogicHandler
 {
 public:
-	LogicHandler(App* a_app);
+	LogicHandler(IApp* a_app);
 	~LogicHandler();
 
 	void Logic();
@@ -22,7 +22,7 @@ private:
 	void SpawnEnemies();
 	void ClipPlayer();
 
-	App* m_app;
+	IApp* m_app;
 
 	int m_enemySpawnTimer;
 };

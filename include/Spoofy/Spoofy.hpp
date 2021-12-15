@@ -2,12 +2,12 @@
 #define _SPOOFY_SPOOFY_HPP_
 
 #include "common/IGame.hpp"
-#include "common/SpoofyDefs.hpp"
 
 
 class WindowHandler;
 class LogicHandler;
 class InputHandler;
+class IApp;
 
 class Spoofy : public AbstractGame
 {
@@ -17,13 +17,13 @@ public:
 	void Initialize() override;
 	void InitSDLObject();
 
-	App* GetApp();
+	IApp* GetApp();
 	WindowHandler* GetWindowHandler() override;
 	LogicHandler* GetLogicHandler() override;
 	InputHandler* GetInputHandler() override;
 
 private:
-	App* m_app;
+	IApp* m_app;
 	WindowHandler* m_windowHandler;
 	LogicHandler* m_logicHandler;
 	InputHandler* m_inputHandler;

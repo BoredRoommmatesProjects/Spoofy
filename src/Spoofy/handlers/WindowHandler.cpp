@@ -2,18 +2,23 @@
 
 #include "handlers/WindowHandler.hpp"
 #include "Spoofy.hpp"
+#include "common/SpoofyEntity.hpp"
 #include "common/SpoofyDefs.hpp"
 #include "utils/MathUtils.hpp"
 #include "handlers/LogicHandler.hpp"
+#include "common/IApp.hpp"
+
+#include <SFML/Graphics/Sprite.hpp>
 
 #include "boost/filesystem.hpp"
 
 std::string currentPath = __FILE__;
 std::string imagesPath = currentPath.substr(0, currentPath.rfind("src")) + "/data/";
 
-WindowHandler::WindowHandler(int a_width, int a_height, App* a_app)
+WindowHandler::WindowHandler(int a_width, int a_height, IApp* a_app)
 : m_app(a_app), m_bulletTexture(nullptr), m_enemyTexture(nullptr), m_enemyBulletTexture(nullptr),
-m_playerEntity(nullptr), m_mathUtilsObj(new MathUtils()), m_width(a_width), m_height(a_height), m_resetGameTimer(0)
+m_playerEntity(nullptr), m_mathUtilsObj(new MathUtils()), m_width(a_width), m_height(a_height), m_resetGameTimer(0),
+m_bulletEntitysDeque({}), m_enemyBulletEntitysDeque({}), m_ennemyEntitysDeque({})
 {}
 
 WindowHandler::~WindowHandler()
@@ -92,16 +97,15 @@ void WindowHandler::ResetGame()
 
 void WindowHandler::InitPlayer()
 {
-	Entity* player = new Entity();
-	memset(player, 0, sizeof(Entity));
+	SpoofyEntity* player = new SpoofyEntity();
 
-	player->x = 100;
-	player->y = 100;
+	player->setEntityXPose(100);
+	player->setEntityYPose(100);
 	boost::filesystem::path currentWorkingDirectory = boost::filesystem::current_path();
 	std::string playerFilename = imagesPath + "player.png";
-	player->texture = LoadTexture(playerFilename);
-	player->w = player->texture->getSize().x;
-	player->h = player->texture->getSize().y;
+	player->setEntityTexture(LoadTexture(playerFilename));
+	player->setEntityTextureWidth(player->getEntityTexture()->getSize().x);
+	player->setEntityTextureHeight(player->getEntityTexture()->getSize().y);
 
 	m_playerEntity = player;
 }
@@ -126,12 +130,12 @@ void WindowHandler::InitEnemyBullet()
 
 void WindowHandler::PrepareWindow()
 {
-    m_app->windowRenderer->clear(sf::Color(32, 32, 32, 255));
+    m_app->getWindowRenderer()->clear(sf::Color(32, 32, 32, 255));
 }
 
 void WindowHandler::PresentWindow()
 {
-    m_app->windowRenderer->display();
+    m_app->getWindowRenderer()->display();
 }
 
 sf::Texture* WindowHandler::LoadTexture(std::string& a_filename)
@@ -145,13 +149,13 @@ sf::Texture* WindowHandler::LoadTexture(std::string& a_filename)
 	return texture;
 }
 
-void WindowHandler::Blit(Entity* a_entity)
+void WindowHandler::Blit(SpoofyEntity* a_entity)
 {
     sf::Sprite tempSprite;
-	tempSprite.setTexture(*a_entity->texture);
-	tempSprite.setPosition(sf::Vector2f((int)a_entity->x, (int)a_entity->y));
+	tempSprite.setTexture(*a_entity->getEntityTexture());
+	tempSprite.setPosition(sf::Vector2f(a_entity->getEntityXPose(), a_entity->getEntityYPose()));
 	
-    m_app->windowRenderer->draw(tempSprite);
+    m_app->getWindowRenderer()->draw(tempSprite);
 }
 
 void WindowHandler::Draw()
@@ -199,64 +203,68 @@ void WindowHandler::DrawEnemyBullets()
 
 void WindowHandler::FireBullet()
 {
-	Entity* bullet = new Entity();
-	memset(bullet, 0, sizeof(Entity));
+	SpoofyEntity* bullet = new SpoofyEntity();
 
-	bullet->x = m_playerEntity->x + 5;
-	bullet->y = m_playerEntity->y;
-	bullet->dx = PLAYER_BULLET_SPEED;
-	bullet->health = 1;
-	bullet->texture = m_bulletTexture;
+	bullet->setEntityXPose(m_playerEntity->getEntityXPose() + 5);
+	bullet->setEntityYPose(m_playerEntity->getEntityYPose());
+	bullet->setEntityDxVelocity(PLAYER_BULLET_SPEED);
+	bullet->setEntityHealth(1);
+	bullet->setEntityTexture(m_bulletTexture);
 
     sf::Vector2u bulletTextureSize = m_bulletTexture->getSize();
-    bullet->w = bulletTextureSize.x;
-    bullet->h = bulletTextureSize.y;
+    bullet->setEntityTextureWidth(bulletTextureSize.x);
+    bullet->setEntityTextureHeight(bulletTextureSize.y);
 
 	m_bulletEntitysDeque.push_front(bullet);
 
-	bullet->y += (m_playerEntity->h / 2) - (bullet->h / 2);
+	bullet->setEntityYPose(bullet->getEntityYPose() + (m_playerEntity->getEntityTextureHeight() / 2) - (bullet->getEntityTextureHeight() / 2));
 
-	m_playerEntity->reload = 8;
+	m_playerEntity->setEntityReload(8);
 }
 
-void WindowHandler::FireEnemyBullet(Entity* a_enemyEntity)
+void WindowHandler::FireEnemyBullet(SpoofyEntity* a_enemyEntity)
 {
-	Entity* enemyBullet = new Entity();
-	memset(enemyBullet, 0, sizeof(Entity));
+	SpoofyEntity* enemyBullet = new SpoofyEntity();
 
-	enemyBullet->x = a_enemyEntity->x;
-	enemyBullet->y = a_enemyEntity->y;
-	enemyBullet->health = 1;
-	enemyBullet->texture = m_enemyBulletTexture;
-	enemyBullet->side = a_enemyEntity->side;
+	enemyBullet->setEntityXPose(a_enemyEntity->getEntityXPose());
+	enemyBullet->setEntityYPose(a_enemyEntity->getEntityYPose());
+	enemyBullet->setEntityHealth(1);
+	enemyBullet->setEntityTexture(m_enemyBulletTexture);
+	enemyBullet->setEntitySide(a_enemyEntity->getEntitySide());
 
 	m_enemyBulletEntitysDeque.push_front(enemyBullet);
 
     sf::Vector2u enemyBulletTextureSize = m_enemyBulletTexture->getSize();
-    enemyBullet->w = enemyBulletTextureSize.x;
-    enemyBullet->h = enemyBulletTextureSize.y;
+    enemyBullet->setEntityTextureWidth(enemyBulletTextureSize.x);
+    enemyBullet->setEntityTextureHeight(enemyBulletTextureSize.y);
 
 
-	enemyBullet->x += (a_enemyEntity->w / 2) - (enemyBullet->w / 2);
-	enemyBullet->y += (a_enemyEntity->h / 2) - (enemyBullet->h / 2);
+	enemyBullet->setEntityXPose(enemyBullet->getEntityXPose() + 
+							   ((a_enemyEntity->getEntityTextureWidth() / 2) - (enemyBullet->getEntityTextureWidth() / 2)));
+	enemyBullet->setEntityYPose(enemyBullet->getEntityYPose() + 
+							   ((a_enemyEntity->getEntityTextureHeight() / 2) - (enemyBullet->getEntityTextureHeight() / 2)));
 
-	m_mathUtilsObj->CalcSlope((int)(m_playerEntity->x + (m_playerEntity->w / 2)), (int)(m_playerEntity->y + (m_playerEntity->h / 2)),
-							  (int)a_enemyEntity->x, (int)a_enemyEntity->y, &enemyBullet->dx, &enemyBullet->dy);
-	enemyBullet->dx *= ALIEN_BULLET_SPEED;
-	enemyBullet->dy *= ALIEN_BULLET_SPEED;
+	float dx = enemyBullet->getEntityDxVelocity();
+	float dy = enemyBullet->getEntityDyVelocity();
+	m_mathUtilsObj->CalcSlope((int)(m_playerEntity->getEntityXPose() + (m_playerEntity->getEntityTextureWidth() / 2)), 
+							  (int)(m_playerEntity->getEntityYPose() + (m_playerEntity->getEntityTextureHeight() / 2)), 
+							  (int)a_enemyEntity->getEntityXPose(), (int)a_enemyEntity->getEntityYPose(), 
+							  &dx, &dy);
+	enemyBullet->setEntityDxVelocity(dx * ALIEN_BULLET_SPEED);
+	enemyBullet->setEntityDyVelocity(dy * ALIEN_BULLET_SPEED);
 
-	enemyBullet->side = SIDE_ALIEN;
+	enemyBullet->setEntitySide(SIDE_ALIEN);
 
-	a_enemyEntity->reload = (rand() % FPS * 2);
+	a_enemyEntity->setEntityReload((rand() % FPS * 2));
 }
 
-bool WindowHandler::BulletHitFighter(Entity* a_bulletEntity)
+bool WindowHandler::BulletHitFighter(SpoofyEntity* a_bulletEntity)
 {
 	size_t i = 1;
 	while (i <= m_ennemyEntitysDeque.size() && !m_ennemyEntitysDeque.empty())
 	{
-		Entity* tempEntity = m_ennemyEntitysDeque.at(m_ennemyEntitysDeque.size() - i);
-		if (tempEntity->side != a_bulletEntity->side &&
+		//SpoofyEntity* tempEntity = m_ennemyEntitysDeque.at(m_ennemyEntitysDeque.size() - i);
+		/*if (tempEntity->side != a_bulletEntity->side &&
 			m_mathUtilsObj->Collision((int)a_bulletEntity->x, (int)a_bulletEntity->y, (int)a_bulletEntity->w,
 									  (int)a_bulletEntity->h, (int)tempEntity->x, (int)tempEntity->y,
 									  (int)tempEntity->w, (int)tempEntity->h))
@@ -265,7 +273,7 @@ bool WindowHandler::BulletHitFighter(Entity* a_bulletEntity)
 			tempEntity->health = 0;
 
 			return true;
-		}
+		}*/
 		i++;
 	}
 
@@ -274,40 +282,39 @@ bool WindowHandler::BulletHitFighter(Entity* a_bulletEntity)
 
 void WindowHandler::CreateEnemy()
 {
-	Entity* enemy = new Entity();
-	memset(enemy, 0, sizeof(Entity));
+	SpoofyEntity* enemy = new SpoofyEntity();
 
-	enemy->x = SCREEN_WIDTH;
-	enemy->y = (float)(rand() % SCREEN_HEIGHT);
-	enemy->health = 1;
-	enemy->texture = m_enemyTexture;
-	enemy->dx = -(float)(2 + (rand() % 4));
+	enemy->setEntityXPose(SCREEN_WIDTH);
+	enemy->setEntityYPose((float)(rand() % SCREEN_HEIGHT));
+	enemy->setEntityHealth(1);
+	enemy->setEntityTexture(m_enemyTexture);
+	enemy->setEntityDxVelocity(-(float)(2 + (rand() % 4)));
 
 	m_ennemyEntitysDeque.push_front(enemy);
 
     sf::Vector2u enemyTextureSize = m_enemyBulletTexture->getSize();
-    enemy->w = enemyTextureSize.x;
-    enemy->h = enemyTextureSize.y;
+    enemy->setEntityTextureWidth(enemyTextureSize.x);
+    enemy->setEntityTextureHeight(enemyTextureSize.y);
 
-	enemy->reload = FPS * (1 + (rand() % 3));
+	enemy->setEntityReload(FPS * (1 + (rand() % 3)));
 }
 
-std::deque<Entity*>* WindowHandler::GetBulletDeque()
+std::deque<SpoofyEntity*>* WindowHandler::GetBulletDeque()
 {
 	return &m_bulletEntitysDeque;
 }
 
-std::deque<Entity*>* WindowHandler::GetEnemyBulletDeque()
+std::deque<SpoofyEntity*>* WindowHandler::GetEnemyBulletDeque()
 {
 	return &m_enemyBulletEntitysDeque;
 }
 
-std::deque<Entity*>* WindowHandler::GetEnemyDeque()
+std::deque<SpoofyEntity*>* WindowHandler::GetEnemyDeque()
 {
 	return &m_ennemyEntitysDeque;
 }
 
-Entity* WindowHandler::GetPlayerEntity()
+SpoofyEntity* WindowHandler::GetPlayerEntity()
 {
 	return m_playerEntity;
 }

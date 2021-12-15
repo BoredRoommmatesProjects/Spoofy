@@ -4,13 +4,15 @@
 #include "handlers/LogicHandler.hpp"
 #include "handlers/WindowHandler.hpp"
 #include "Spoofy.hpp"
+#include "common/SpoofyDefs.hpp"
+#include "common/SpoofyEntity.hpp"
+#include "common/IApp.hpp"
 
 #include <SFML/Window/Keyboard.hpp>
 
-LogicHandler::LogicHandler(App* a_app) : m_app(a_app)
-{
-	m_enemySpawnTimer = 0;
-}
+LogicHandler::LogicHandler(IApp* a_app)
+: m_app(a_app), m_enemySpawnTimer(0)
+{}
 
 LogicHandler::~LogicHandler()
 {}
@@ -28,7 +30,7 @@ void LogicHandler::Logic()
 	SpawnEnemies();
 
 	ClipPlayer();
-
+	
 	int resetGameTimer = IGame::Instance()->GetWindowHandler()->GetGameResetTimer();
 	IGame::Instance()->GetWindowHandler()->SetGameResetTimer(--resetGameTimer);
 	if (IGame::Instance()->GetWindowHandler()->GetPlayerEntity() == nullptr && IGame::Instance()->GetWindowHandler()->GetGameResetTimer() <= 0)
@@ -39,72 +41,73 @@ void LogicHandler::Logic()
 
 void LogicHandler::DoPlayer()
 {
-	Entity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
+	SpoofyEntity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
 
 	if (player != nullptr)
 	{
-		player->dx = player->dy = 0;
+		player->setEntityDxVelocity(0);
+		player->setEntityDyVelocity(0);
 
-		if (player->reload > 0)
+		if (player->getEntityReload() > 0)
 		{
-			player->reload--;
+			player->setEntityReload(player->getEntityReload()-1);
 		}
 
-		if (m_app->keyboard[sf::Keyboard::Key::Up])
+		if (m_app->getKeyboardMatrix()[sf::Keyboard::Key::Up])
 		{
-			player->dy = -PLAYER_SPEED;
+			player->setEntityDyVelocity(-PLAYER_SPEED);
 		}
 
-		if (m_app->keyboard[sf::Keyboard::Key::Down])
+		if (m_app->getKeyboardMatrix()[sf::Keyboard::Key::Down])
 		{
-			player->dy = PLAYER_SPEED;
+			player->setEntityDyVelocity(PLAYER_SPEED);
 		}
 
-		if (m_app->keyboard[sf::Keyboard::Key::Left])
+		if (m_app->getKeyboardMatrix()[sf::Keyboard::Key::Left])
 		{
-			player->dx = -PLAYER_SPEED;
+			player->setEntityDxVelocity(-PLAYER_SPEED);
 		}
 
-		if (m_app->keyboard[sf::Keyboard::Key::Right])
+		if (m_app->getKeyboardMatrix()[sf::Keyboard::Key::Right])
 		{
-			player->dx = PLAYER_SPEED;
+			player->setEntityDxVelocity(PLAYER_SPEED);
 		}
 
-		if (m_app->keyboard[sf::Keyboard::Key::LControl] && player->reload == 0)
+		if (m_app->getKeyboardMatrix()[sf::Keyboard::Key::LControl] && player->getEntityReload() == 0)
 		{
 			IGame::Instance()->GetWindowHandler()->FireBullet();
 		}
 
-		player->x += player->dx;
-		player->y += player->dy;
+		player->setEntityXPose(player->getEntityXPose() + player->getEntityDxVelocity());
+		player->setEntityYPose(player->getEntityYPose() + player->getEntityDyVelocity());
 	}
 }
 
 void LogicHandler::DoEnemies()
 {
-	std::deque<Entity*>* enemyDeque = IGame::Instance()->GetWindowHandler()->GetEnemyDeque();
-	Entity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
+	std::deque<SpoofyEntity*>* enemyDeque = IGame::Instance()->GetWindowHandler()->GetEnemyDeque();
+	SpoofyEntity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
 
 	size_t i = 1;
 	while (i <= enemyDeque->size() && !enemyDeque->empty())
 	{
-		Entity* tempEntity = enemyDeque->at(enemyDeque->size() - i);
-		tempEntity->x += tempEntity->dx;
-		tempEntity->y += tempEntity->dy;
+		SpoofyEntity* tempEntity = enemyDeque->at(enemyDeque->size() - i);
+		tempEntity->setEntityXPose(tempEntity->getEntityXPose() + tempEntity->getEntityDxVelocity());
+		tempEntity->setEntityYPose(tempEntity->getEntityYPose() + tempEntity->getEntityDyVelocity());
 
-		if (tempEntity->x < -tempEntity->w || tempEntity == player) // TODO: player versus enemy colision
+		if (tempEntity->getEntityXPose() < -tempEntity->getEntityTextureWidth() || tempEntity == player) // TODO: player versus enemy colision
 		{
-			tempEntity->health = 0;
+			tempEntity->setEntityHealth(0);
 		}
 
-		if (tempEntity->health == 0)
+		if (tempEntity->getEntityHealth() == 0)
 		{
 			if (tempEntity == player) // TODO: player versus enemy colision
 			{
 				player = nullptr;
 			}
 			tempEntity = nullptr;
-			std::deque<Entity*>::iterator it = enemyDeque->end() - i;
+			std::deque<SpoofyEntity*>::iterator it = enemyDeque->end() - i;
 			enemyDeque->erase(it);
 		}
 		i++;
@@ -113,31 +116,34 @@ void LogicHandler::DoEnemies()
 
 void LogicHandler::DoEnemyBullet()
 {
-	std::deque<Entity*>* enemyDeque = IGame::Instance()->GetWindowHandler()->GetEnemyDeque();
-	Entity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
+	std::deque<SpoofyEntity*>* enemyDeque = IGame::Instance()->GetWindowHandler()->GetEnemyDeque();
+	SpoofyEntity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
 
 	size_t i = 1;
 	while (i <= enemyDeque->size() && !enemyDeque->empty())
 	{
-		Entity* tempEntity = enemyDeque->at(enemyDeque->size() - i);
+		SpoofyEntity* tempEntity = enemyDeque->at(enemyDeque->size() - i);
 
-		if (tempEntity != player && player != nullptr && --tempEntity->reload <= 0)
+		tempEntity->setEntityReload(tempEntity->getEntityReload() - 1);
+		if (tempEntity != player && player != nullptr && tempEntity->getEntityReload() <= 0)
 		{
 			IGame::Instance()->GetWindowHandler()->FireEnemyBullet(tempEntity);
 		}
 		i++;
 	}
 
-	std::deque<Entity*>* enemyBulletDeque = IGame::Instance()->GetWindowHandler()->GetEnemyBulletDeque();
+	std::deque<SpoofyEntity*>* enemyBulletDeque = IGame::Instance()->GetWindowHandler()->GetEnemyBulletDeque();
 	size_t j = 1;
 	while (j <= enemyBulletDeque->size() && !enemyBulletDeque->empty())
 	{
-		Entity* tempEnemyBulletEntity = enemyBulletDeque->at(enemyBulletDeque->size() - j);
-		tempEnemyBulletEntity->x += tempEnemyBulletEntity->dx;
-		tempEnemyBulletEntity->y += tempEnemyBulletEntity->dy;
+		SpoofyEntity* tempEnemyBulletEntity = enemyBulletDeque->at(enemyBulletDeque->size() - j);
+		tempEnemyBulletEntity->setEntityXPose(tempEnemyBulletEntity->getEntityXPose() + tempEnemyBulletEntity->getEntityDxVelocity());
+		tempEnemyBulletEntity->setEntityYPose(tempEnemyBulletEntity->getEntityYPose() + tempEnemyBulletEntity->getEntityDyVelocity());
 
-		if (tempEnemyBulletEntity->x < -tempEnemyBulletEntity->w || tempEnemyBulletEntity->y < -tempEnemyBulletEntity->h ||
-			tempEnemyBulletEntity->x > SCREEN_WIDTH || tempEnemyBulletEntity->y > SCREEN_HEIGHT)
+		if (tempEnemyBulletEntity->getEntityXPose() < -tempEnemyBulletEntity->getEntityTextureWidth() || 
+			tempEnemyBulletEntity->getEntityYPose() < -tempEnemyBulletEntity->getEntityTextureHeight() ||
+			tempEnemyBulletEntity->getEntityXPose() > SCREEN_WIDTH || 
+			tempEnemyBulletEntity->getEntityYPose() > SCREEN_HEIGHT)
 		{
 			std::cout << "In DoEnemyBullet() function pop_back condition" << std::endl;
 			tempEnemyBulletEntity = nullptr;
@@ -150,18 +156,20 @@ void LogicHandler::DoEnemyBullet()
 
 void LogicHandler::DoBullets()
 {
-	std::deque<Entity*>* bulletDeque = IGame::Instance()->GetWindowHandler()->GetBulletDeque();
+	std::deque<SpoofyEntity*>* bulletDeque = IGame::Instance()->GetWindowHandler()->GetBulletDeque();
 
 	size_t i = 1;
 	while (i <= bulletDeque->size() && !bulletDeque->empty())
 	{
-		Entity* tempEntity = bulletDeque->at(bulletDeque->size() - i);
-		tempEntity->x += tempEntity->dx;
-		tempEntity->y += tempEntity->dy;
+		SpoofyEntity* tempEntity = bulletDeque->at(bulletDeque->size() - i);
+		tempEntity->setEntityXPose(tempEntity->getEntityXPose() + tempEntity->getEntityDxVelocity());
+		tempEntity->setEntityYPose(tempEntity->getEntityYPose() + tempEntity->getEntityDyVelocity());
 
 		if (/*IGame::Instance()->GetWindowHandler()->BulletHitFighter(tempEntity) ||*/
-			tempEntity->x < -tempEntity->w || tempEntity->y < -tempEntity->h || 
-			tempEntity->x > SCREEN_WIDTH || tempEntity->y > SCREEN_HEIGHT)
+			tempEntity->getEntityXPose() < -tempEntity->getEntityTextureWidth() || 
+			tempEntity->getEntityYPose() < -tempEntity->getEntityTextureHeight() || 
+			tempEntity->getEntityXPose() > SCREEN_WIDTH || 
+			tempEntity->getEntityYPose() > SCREEN_HEIGHT)
 		{
 			std::cout << "In DoBullets() function pop_back condition" << std::endl;
 			tempEntity = nullptr;
@@ -182,28 +190,28 @@ void LogicHandler::SpawnEnemies()
 
 void LogicHandler::ClipPlayer()
 {
-	Entity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
+	SpoofyEntity* player = IGame::Instance()->GetWindowHandler()->GetPlayerEntity();
 
 	if (player != nullptr)
 	{
-		if (player->x < 0)
+		if (player->getEntityXPose() < 0)
 		{
-			player->x = 0;
+			player->setEntityXPose(0);
 		}
 
-		if (player->y < 0)
+		if (player->getEntityYPose() < 0)
 		{
-			player->y = 0;
+			player->setEntityYPose(0);
 		}
 
-		if (player->x > SCREEN_WIDTH / 2.0)
+		if (player->getEntityXPose() > SCREEN_WIDTH / 2.0)
 		{
-			player->x = SCREEN_WIDTH / 2.0;
+			player->setEntityXPose(SCREEN_WIDTH / 2.0);
 		}
 
-		if (player->y > (float)(SCREEN_HEIGHT - player->h))
+		if (player->getEntityYPose() > (float)(SCREEN_HEIGHT - player->getEntityTextureHeight()))
 		{
-			player->y = (float)(SCREEN_HEIGHT - player->h);
+			player->setEntityYPose((float)(SCREEN_HEIGHT - player->getEntityTextureHeight()));
 		}
 	}
 }

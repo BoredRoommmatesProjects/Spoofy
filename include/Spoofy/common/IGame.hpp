@@ -1,4 +1,3 @@
-
 #ifndef _SPOOFY_COMMON_IGAME_HPP_
 #define _SPOOFY_COMMON_IGAME_HPP_
 

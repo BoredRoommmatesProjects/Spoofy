@@ -7,6 +7,8 @@
 #include "handlers/LogicHandler.hpp"
 #include "handlers/InputHandler.hpp"
 
+#include <SFML/System/Clock.hpp>
+
 static void capFrameRate(sf::Time* then, sf::Time* remainder, sf::Clock* clock)
 {
 	sf::Time wait, frameTime;
@@ -46,7 +48,7 @@ int main()
 	then = clock.getElapsedTime();
 
 	remainder = sf::Time::Zero;
-
+	
 	while (1)
 	{
 		IGame::Instance()->GetWindowHandler()->PrepareWindow();
@@ -58,7 +60,7 @@ int main()
 		IGame::Instance()->GetWindowHandler()->Draw();
 
 		IGame::Instance()->GetWindowHandler()->PresentWindow();
-
+		
 		capFrameRate(&then, &remainder, &clock);
 	}
 

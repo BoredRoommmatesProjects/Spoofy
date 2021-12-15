@@ -4,9 +4,8 @@
 #include <string>
 #include <deque>
 
-struct App;
-struct Stage;
-struct Entity;
+struct IApp;
+struct SpoofyEntity;
 namespace sf
 {
 	class Texture;
@@ -17,7 +16,7 @@ class MathUtils;
 class WindowHandler
 {
 public:
-	WindowHandler(int a_width, int a_height, App* a_app);
+	WindowHandler(int a_width, int a_height, IApp* a_app);
 
 	~WindowHandler();
 
@@ -27,15 +26,15 @@ public:
 	void PresentWindow();
 	void Draw();
 	void FireBullet();
-	void FireEnemyBullet(Entity* a_enemyEntity);
+	void FireEnemyBullet(SpoofyEntity* a_enemyEntity);
 	void CreateEnemy();
 
-	bool BulletHitFighter(Entity* a_bulletEntity);
+	bool BulletHitFighter(SpoofyEntity* a_bulletEntity);
 
-	std::deque<Entity*>* GetBulletDeque();
-	std::deque<Entity*>* GetEnemyBulletDeque();
-	std::deque<Entity*>* GetEnemyDeque();
-	Entity* GetPlayerEntity();
+	std::deque<SpoofyEntity*>* GetBulletDeque();
+	std::deque<SpoofyEntity*>* GetEnemyBulletDeque();
+	std::deque<SpoofyEntity*>* GetEnemyDeque();
+	SpoofyEntity* GetPlayerEntity();
 	int GetGameResetTimer();
 	void SetGameResetTimer(int a_timer);
 
@@ -50,14 +49,14 @@ private:
 	void DrawBullets();
 	void DrawEnemyBullets();
 
-	void Blit(Entity* a_entity);
+	void Blit(SpoofyEntity* a_entity);
 	sf::Texture* LoadTexture(std::string& a_filename);
 
-	App* m_app;
+	IApp* m_app;
 	sf::Texture* m_bulletTexture;
 	sf::Texture* m_enemyTexture;
 	sf::Texture* m_enemyBulletTexture;
-	Entity* m_playerEntity;
+	SpoofyEntity* m_playerEntity;
 
 	MathUtils* m_mathUtilsObj;
 
@@ -65,9 +64,9 @@ private:
 	int m_height;
 	int m_resetGameTimer;
 
-	std::deque<Entity*> m_bulletEntitysDeque;
-	std::deque<Entity*> m_enemyBulletEntitysDeque;
-	std::deque<Entity*> m_ennemyEntitysDeque;
+	std::deque<SpoofyEntity*> m_bulletEntitysDeque;
+	std::deque<SpoofyEntity*> m_enemyBulletEntitysDeque;
+	std::deque<SpoofyEntity*> m_ennemyEntitysDeque;
 };
 
 #endif // !_SPOOFY_HANDLERS_WINDOWHANDLER_H_
