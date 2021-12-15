@@ -30,7 +30,7 @@ void LogicHandler::Logic()
 	SpawnEnemies();
 
 	ClipPlayer();
-	
+
 	int resetGameTimer = IGame::Instance()->GetWindowHandler()->GetGameResetTimer();
 	IGame::Instance()->GetWindowHandler()->SetGameResetTimer(--resetGameTimer);
 	if (IGame::Instance()->GetWindowHandler()->GetPlayerEntity() == nullptr && IGame::Instance()->GetWindowHandler()->GetGameResetTimer() <= 0)
@@ -134,6 +134,7 @@ void LogicHandler::DoEnemyBullet()
 
 	std::deque<SpoofyEntity*>* enemyBulletDeque = IGame::Instance()->GetWindowHandler()->GetEnemyBulletDeque();
 	size_t j = 1;
+	std::deque<SpoofyEntity*>::iterator it = enemyBulletDeque->end() - 1;
 	while (j <= enemyBulletDeque->size() && !enemyBulletDeque->empty())
 	{
 		SpoofyEntity* tempEnemyBulletEntity = enemyBulletDeque->at(enemyBulletDeque->size() - j);
@@ -147,11 +148,11 @@ void LogicHandler::DoEnemyBullet()
 		{
 			std::cout << "In DoEnemyBullet() function pop_back condition" << std::endl;
 			tempEnemyBulletEntity = nullptr;
-			enemyBulletDeque->pop_back();
+			enemyBulletDeque->erase(it);
 		}
 		j++;
+		it--;
 	}
-	
 }
 
 void LogicHandler::DoBullets()
